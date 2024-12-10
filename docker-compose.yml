@@ -1,0 +1,89 @@
+version: '3.4'
+
+services:
+  back:
+    container_name: myApi
+    build:
+      context: ./myApi
+      dockerfile: ../docker/myApi/Dockerfile
+    volumes:
+      - ./myApi/:/usr/src/app/
+    command: dotnet watch run --quiet
+    ports:
+      - "7277:7277"
+    depends_on:
+      - db
+    networks:
+      - myYoutube
+
+  db:
+    container_name: myYoutube_db
+    image: yobasystems/alpine-mariadb:10.4.17 #SPECIFIC IMAGE FOR ARM (RASPBERRY PI) ARCHITECTURE
+    # command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_DATABASE: myapi
+      MYSQL_USER: myapi
+      MYSQL_PASSWORD: myapi
+      MYSQL_ROOT_PASSWORD: myapi
+    ports: 
+      - 3306:3306
+    volumes:
+      - myYoutube_persistent:/var/lib/mysql
+    expose:
+      - "3306"
+    networks:
+      - myYoutube
+
+  front:
+    container_name: myYoutube
+    build:
+      context: ./myYoutube/
+      dockerfile: ../docker/myYoutube/Dockerfile
+    volumes:
+      - ./myYoutube/:/usr/src/nuxt-app
+    environment:
+        - CHOKIDAR_USEPOLLING=true
+    ports:
+      - '80:3000'
+    networks:
+      - myYoutube
+  
+  encoding:
+    container_name: myEncoding
+    build:
+      context: ./myEncoding
+      dockerfile: ../docker/myEncoding/Dockerfile
+    restart: always
+    volumes:
+      - ./myEncoding:/var/www/html
+    networks:
+      - myYoutube
+    ports:
+      - 800:80
+    expose:
+      - 80
+      - 800
+    environment:
+     UPLOAD_LIMIT: 512MB
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: pma
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      - PMA_ARBITRARY=1
+    networks:
+      - myYoutube
+
+networks:
+  myYoutube:
+    driver: "bridge"
+
+volumes:
+  myYoutube_persistent:
+    driver: local

@@ -1,0 +1,43 @@
+version: '3'
+services:
+
+  db:
+    container_name: db
+    image: mysql:8.0.26
+    restart: always
+    environment:
+      MYSQL_DATABASE: myapi
+      MYSQL_USER: myapi
+      MYSQL_PASSWORD: myapi
+      MYSQL_ROOT_PASSWORD: myapi
+    command: --lower_case_table_names=0
+    ports:
+      - 3306:3306
+    volumes:
+      - persistent:/var/lib/mysql
+    expose:
+      - "3306"
+    networks:
+      - myapi
+    # extra_hosts:
+    # - "host.docker.internal:host-gateway"
+      
+
+  adminer:
+    container_name: adminer
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    expose:
+      - "8080"
+    networks:
+      - myapi
+
+volumes:
+  persistent:
+
+networks:
+  myapi:
+    # driver: "bridge"
+
